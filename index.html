@@ -13,9 +13,7 @@
   <body>
     <div class="container mt-5" style="margin-top: 50px">
       <h1 class="text-center">Device Control Panel</h1>
-      <div id="deviceCards" class="row justify-content-center mt-4">
-        <!-- Device control will be displayed here -->
-      </div>
+      <div id="deviceCards" class="row justify-content-center mt-4"></div>
       <div id="distanceData" class="mt-5">
         <h3 class="text-center">Distance Sensor Data</h3>
         <div class="row justify-content-center mt-4">
@@ -52,44 +50,37 @@
     </div>
 
     <script type="module">
-      // Import Firebase modules
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-      import { getAuth, signInWithEmailAndPassword,} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-      import { getDatabase, ref, onValue, set,} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+      } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-      // Import configuration
-      import { firebaseConfig, authCredentials } from "./config.js";
+      import { firebaseConfig } from "./config.js";
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const database = getDatabase(app);
+      try {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
 
-      // Login using email and password
-      signInWithEmailAndPassword(
-        auth,
-        authCredentials.email,
-        authCredentials.password
-      )
-        .then((userCredential) => {
-          console.log("Login successful:", userCredential.user);
+        console.log("Firebase Admin initialized successfully");
 
-          // Reference paths
-          const conRef = ref(database, "Device/Con");
-          const writeRef = ref(database, "Device/Write");
+        const conRef = ref(database, "Device/Con");
+        const writeRef = ref(database, "Device/Write");
 
-          // Fetch and display the "Con" status
-          onValue(ref(database, "Device"), (snapshot) => {
-            const data = snapshot.val();
-            console.log("Data retrieved from Firebase:", data);
+        onValue(ref(database, "Device"), (snapshot) => {
+          const data = snapshot.val();
+          console.log("Data retrieved from Firebase:", data);
 
-            if (data) {
-              const conStatus = data.Con ? "Door is Closed" : "Door is Open";
-              const writeStatus = data.Write;
+          if (data) {
+            const conStatus = data.Con ? "Door is Closed" : "Door is Open";
+            const writeStatus = data.Write;
 
-              // Update UI
-              const deviceCards = document.getElementById("deviceCards");
-              deviceCards.innerHTML = `
+            // Update UI
+            const deviceCards = document.getElementById("deviceCards");
+            deviceCards.innerHTML = `
                             <div class="center-div" style="display: flex; justify-content: center; align-items: center; margin-top:50px">
                                 <div class="card text-center" style="width:35%; height: 150px;">
                                     <div class="card-header" style="font-size: 30px; font-weight: bold; background-color: grey">
@@ -116,48 +107,43 @@
                             </div>
                         `;
 
-              // Event listener for button
-              document
-                .querySelector(".toggle-button")
-                .addEventListener("click", (event) => {
-                  const currentStatus =
-                    event.target.getAttribute("data-status") === "true";
-                  const newStatus = !currentStatus;
+            document
+              .querySelector(".toggle-button")
+              .addEventListener("click", (event) => {
+                const currentStatus =
+                  event.target.getAttribute("data-status") === "true";
+                const newStatus = !currentStatus;
 
-                  // Update Firebase
-                  set(ref(database, "Device/Write"), newStatus);
+                set(ref(database, "Device/Write"), newStatus);
 
-                  // Update button UI
-                  event.target.textContent = newStatus ? "Open" : "Close";
-                  event.target.setAttribute("data-status", newStatus);
-                });
-            }
-          });
-
-          // Fetch and display Distance/MQ135/Acceleration data
-          const paths = {
-            distanceAx: "Distance/ax",
-            distanceAy: "Distance/ay",
-            distanceAz: "Distance/az",
-            mq135Analog: "Distance/MQ135/analogValue",
-            mq135Voltage: "Distance/MQ135/voltage",
-            accelerationAc: "Distance/acceleration/ac",
-            accelerationAy: "Distance/acceleration/ay",
-            accelerationAz: "Distance/acceleration/az",
-          };
-
-          Object.entries(paths).forEach(([id, path]) => {
-            const element = document.getElementById(id);
-            onValue(ref(database, path), (snapshot) => {
-              const value = snapshot.val();
-              console.log(`${path}:`, value);
-              element.textContent = value !== null ? value : "N/A";
-            });
-          });
-        })
-        .catch((error) => {
-          console.error("Login failed:", error.message);
+                event.target.textContent = newStatus ? "Open" : "Close";
+                event.target.setAttribute("data-status", newStatus);
+              });
+          }
         });
+
+        const paths = {
+          distanceAx: "Distance/ax",
+          distanceAy: "Distance/ay",
+          distanceAz: "Distance/az",
+          mq135Analog: "Distance/MQ135/analogValue",
+          mq135Voltage: "Distance/MQ135/voltage",
+          accelerationAc: "Distance/acceleration/ac",
+          accelerationAy: "Distance/acceleration/ay",
+          accelerationAz: "Distance/acceleration/az",
+        };
+
+        Object.entries(paths).forEach(([id, path]) => {
+          const element = document.getElementById(id);
+          onValue(ref(database, path), (snapshot) => {
+            const value = snapshot.val();
+            console.log(`${path}:`, value);
+            element.textContent = value !== null ? value : "N/A";
+          });
+        });
+      } catch (error) {
+        console.error("Firebase initialization error:", error);
+      }
     </script>
   </body>
   <footer>
